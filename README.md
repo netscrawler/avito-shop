@@ -85,6 +85,11 @@ docker-compose up -d
 
 ## Запуск тестов
 
+### Запуск всех тестов
+```bash
+./scripts/test/run_all_tests.sh
+```
+
 ### Unit-тесты
 ```bash
 ./scripts/test/run_unit_tests.sh
