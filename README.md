@@ -111,9 +111,6 @@ docker-compose up -d
 - `loadtest/report/index.html` - HTML отчет
 - `loadtest/results.jtl` - сырые данные тестирования
 
-## Лицензия
-
-MIT
 
 ## Автор
 
