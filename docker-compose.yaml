@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  avito-shop-service:
+      build: .
+      container_name: avito-shop-service
+      ports:
+        - "8080:8080"
+      environment:
+        # енвы подключения к БД
+        - DATABASE_PORT=5432
+        - DATABASE_USER=postgres
+        - DATABASE_PASSWORD=postgres
+        - DATABASE_NAME=avito_shop
+        - DATABASE_HOST=db
+        # порт сервиса
+        - SERVER_PORT=8080
+      depends_on:
+        db:
+            condition: service_healthy
+      networks:
+        - internal
+
+  db:
+    image: postgres:latest
+    container_name: db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: avito_shop
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./migrations/init.sql/:/docker-entrypoint-initdb.d
+    command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  jmeter:
+    image: justb4/jmeter:latest
+    container_name: jmeter
+    volumes:
+      - ./loadtest:/loadtest
+    command: -n -t /loadtest/test_plan.jmx -l /loadtest/results.jtl -e -o /loadtest/report
+    networks:
+      - internal
+    depends_on:
+      - avito-shop-service
+
+networks:
+  internal:
+    name: avito_shop_internal

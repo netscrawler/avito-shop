@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ../../../..
+      dockerfile: Dockerfile
+    container_name: avito-shop-app
+    ports:
+      - "8081:8081"
+    environment:
+      # Database connection
+      - DATABASE_HOST=test-db
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+      - DATABASE_NAME=avito_shop
+      # Server configuration
+      - SERVER_PORT=8081
+      # JWT configuration
+      - JWT_SECRET=test_secret
+      - JWT_TTL=24h
+    depends_on:
+      test-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  test:
+    build:
+      context: ../../../..
+      dockerfile: internal/test/e2e/docker/Dockerfile.test
+    container_name: avito-shop-test
+    environment:
+      - APP_HOST=app
+      - APP_PORT=8081
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - test-network
+
+  test-db:
+    image: postgres:16-alpine
+    container_name: avito-shop-test-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: avito_shop
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    name: avito-shop-test-network
+    driver: bridge
+
+volumes:
+  go-cache:
+    name: avito-shop-test-cache
+  postgres-data:
+    name: avito-shop-test-db-data 
